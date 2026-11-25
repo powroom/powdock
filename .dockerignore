@@ -1,0 +1,17 @@
+node_modules
+dist
+.data
+.tanstack
+.nitro
+.output
+.git
+.vscode
+*.log
+.env*
+docs
+README.md
+Dockerfile
+.dockerignore
+.github
+.oxlintrc.json
+npm-package

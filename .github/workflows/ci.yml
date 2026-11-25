@@ -1,0 +1,50 @@
+# Checks every push to main and every pull request. A pull request can be merged only when this passes
+# (set "Require status checks" for the "checks" and "docker" jobs in the branch protection of main).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - run: bun install --frozen-lockfile
+      - run: bun check
+      - run: bun run lint
+      - run: bun fmt --check
+      - run: bun test
+      - name: Build the app and the npm package
+        run: bun run build:npm
+      - name: Show what the npm package would contain
+        run: npm pack ./npm-package --dry-run
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      # amd64 only: the arm64 image is built when a release is published
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

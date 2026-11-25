@@ -1,0 +1,70 @@
+# Publishes the powdock package to npm (https://www.npmjs.com/package/powdock) with npm trusted publishing:
+# GitHub proves to npm that this workflow is running, so no npm token is stored anywhere, and the
+# package gets a provenance statement automatically.
+#
+# One-time setup on npmjs.com (package powdock > Settings > Trusted publishing > GitHub Actions):
+# organization powroom, repository powdock, workflow publish-npm.yml. Do it on the day of a release: npm
+# drops the setting when it is not used for a successful publish within 2 days.
+#
+# How to release (set "version" in package.json to the same number first, and commit it):
+#   git tag v0.1.1 && git push origin v0.1.1
+# The checks run first. If one fails, nothing is published. A version that is already on npm
+# (for example one published by hand) is skipped.
+
+name: Publish npm package
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # lets npm verify that this workflow is publishing (trusted publishing)
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Install and run the checks
+        run: |
+          bun install --frozen-lockfile
+          bun check
+          bun run lint
+          bun test
+          bun fmt --check
+
+      - name: Build the npm package
+        run: bun run build:npm
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # trusted publishing needs npm 11.5.1 or newer
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
+
+      - name: Check whether this version is already on npm
+        id: npm
+        run: |
+          version=$(node -p "require('./npm-package/package.json').version")
+          if npm view "powdock@$version" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "powdock $version is already on npm. Nothing to publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        if: steps.npm.outputs.published == 'false'
+        run: npm publish ./npm-package --access public

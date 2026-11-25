@@ -1,0 +1,226 @@
+{
+  "Id": "8f44f4fc4eb1de1906571d2a5ff306ec3da121ea28d5d2d573f8d494ddc59ca5",
+  "Created": "2026-11-24T07:38:11.851649084Z",
+  "Path": "sleep",
+  "Args": [
+    "3600"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 1052200,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-11-24T07:38:12.358545729Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:98ad9d1a2be345201bb0709b0d38655eb1b370145c7d94ca1fe9c421f76e245a",
+  "Name": "/powdock-update-test",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "powdock-update-vol:/data"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "bridge",
+    "PortBindings": {
+      "80/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "18099"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": [],
+    "DnsSearch": [],
+    "ExtraHosts": null,
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": [],
+    "BlkioDeviceReadBps": [],
+    "BlkioDeviceWriteBps": [],
+    "BlkioDeviceReadIOps": [],
+    "BlkioDeviceWriteIOps": [],
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": [],
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "volume",
+      "Name": "powdock-update-vol",
+      "Source": "/var/lib/docker/volumes/powdock-update-vol/_data",
+      "Destination": "/data",
+      "Driver": "local",
+      "Mode": "z",
+      "RW": true,
+      "Propagation": ""
+    }
+  ],
+  "Config": {
+    "Hostname": "8f44f4fc4eb1",
+    "Domainname": "",
+    "User": "",
+    "AttachStdin": false,
+    "AttachStdout": false,
+    "AttachStderr": false,
+    "ExposedPorts": {
+      "80/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Env": [
+      "A=1"
+    ],
+    "Cmd": [
+      "sleep",
+      "3600"
+    ],
+    "Image": "busybox:1.36",
+    "Volumes": null,
+    "WorkingDir": "",
+    "Entrypoint": null,
+    "Labels": {}
+  },
+  "NetworkSettings": {
+    "SandboxID": "86a6514a272526220b174a8a7955046c0b73c457810149c41889dc14f966f889",
+    "SandboxKey": "/var/run/docker/netns/86a6514a2725",
+    "Ports": {
+      "80/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "18099"
+        }
+      ]
+    },
+    "Networks": {
+      "bridge": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": null,
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "39dd1ab06523b7c579184eafc25000a1a056a5ae28183c31a95009886690a2e4",
+        "EndpointID": "09d3d28499b9921efb31202a6cc2c834ef0ca2d03bd2b813be343e61b6bb06d2",
+        "Gateway": "172.17.0.1",
+        "IPAddress": "172.17.0.2",
+        "MacAddress": "02:78:df:5b:4a:71",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": null
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:584c3aa5ea2787155c186d156a85c380db220a8c886c01aac511b99880290010",
+    "size": 610,
+    "annotations": {
+      "com.docker.official-images.bashbrew.arch": "amd64",
+      "org.opencontainers.image.base.name": "scratch",
+      "org.opencontainers.image.created": "2024-09-11T15:32:52Z",
+      "org.opencontainers.image.revision": "5eb4e443534e093c4d8fe2b6761432430827cc95",
+      "org.opencontainers.image.source": "https://github.com/docker-library/busybox.git",
+      "org.opencontainers.image.url": "https://hub.docker.com/_/busybox",
+      "org.opencontainers.image.version": "1.35.0-glibc"
+    },
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+.nitro
+.tanstack
+.wrangler
+.output
+.vinxi
+__unconfig*
+todos.json
+.data
+# npm package (bun run build:npm): assembled output, and the start.js bundle it copies
+npm-package/
+start.js
+
+# local run (nohup bun run start)
+.powdock.log
+.powdock.pid
