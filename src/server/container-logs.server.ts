@@ -9,7 +9,7 @@ import { encodeLogRecord, type LogRecord } from '@/lib/log-wire'
  * (see src/lib/log-wire.ts). The stream stays open while the container runs, and ends when it stops.
  */
 
-/** A quiet container sends nothing for a long time. A blank line goes out this often, so the connection is not idle. */
+/** A quiet container sends nothing for a long time. A blank line goes out this often, so the log socket is not idle. */
 export const HEARTBEAT_MS = 20_000
 
 export interface ContainerLogsOptions {
@@ -97,8 +97,9 @@ function streamResponse(body: ReadableStream<Uint8Array>, demux: LogDemuxer): Re
 }
 
 /**
- * The logs of a container as a streamed response. `signal` (the request's) stops the Docker call
- * when the browser goes away. Errors before the stream starts are plain text responses.
+ * The logs of a container as a streamed response, which the log socket (src/server/log-socket.server.ts)
+ * passes on to the browser. `signal` stops the Docker call when the socket closes. Errors before the
+ * stream starts are plain text responses.
  */
 export async function containerLogsResponse(
   id: string,

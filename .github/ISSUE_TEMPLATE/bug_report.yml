@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in pow/dock does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please remove passwords, tokens and private data from anything you paste.
+        For security problems, do not open an issue: see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the containers page
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: pow/dock version
+      description: Shown by `powdock --version` (npx), or the image tag you run (for example 0.1.0).
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run pow/dock?
+      options:
+        - Docker image or Docker Compose
+        - npx / bunx
+        - From source
+    validations:
+      required: true
+  - type: input
+    id: engine
+    attributes:
+      label: Docker Engine version
+      description: Shown by `docker version` (the Server version).
+      placeholder: '28.0'
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Ubuntu 24.04
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: Chrome 140
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Server logs (for example `docker logs powdock`, or the terminal output of `npx powdock`) or a screenshot.

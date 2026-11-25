@@ -1,0 +1,36 @@
+# pow/dock for everyday use. It pulls the published image (no build).
+#
+#   curl -o compose.yml https://raw.githubusercontent.com/powroom/powdock/main/compose.example.yml
+#   echo "DOCKER_GID=$(stat -c %g /var/run/docker.sock)" > .env
+#   docker compose up -d                → http://localhost:3434
+#   docker compose logs -f app          (show app logs, Ctrl+C to stop)
+#   docker compose down                 (add -v to also delete the data volume, with the admin account)
+#
+# DOCKER_GID is the group of the Docker socket on this machine. pow/dock runs as user 1000 inside the
+# container, so it needs that group to use the socket. The .env line above saves it once, next to this
+# file, and every docker compose command reads it from there.
+name: powdock
+
+services:
+  app:
+    image: ghcr.io/powroom/powdock:latest
+    container_name: powdock
+    restart: unless-stopped
+    ports:
+      # only reachable from this machine; sign in at first start
+      - '127.0.0.1:3434:3434'
+    # environment:
+    # creates the admin on first start when no admin exists yet (at least 8 characters)
+    # POWDOCK_ADMIN_PASSWORD: change-me-now
+    # POWDOCK_ADMIN_USER: admin
+    volumes:
+      # the Docker Engine socket: pow/dock lists and manages containers through it
+      - /var/run/docker.sock:/var/run/docker.sock
+      - powdock-data:/data
+    group_add:
+      - '${DOCKER_GID:?set DOCKER_GID to the group of /var/run/docker.sock}'
+
+volumes:
+  powdock-data:
+    # the same volume name as the docker run command in the README
+    name: powdock-data

@@ -7,6 +7,7 @@ import { modKey } from '@/hooks/use-hotkey'
 const ROWS: { label: string; keys: string[] }[] = [
   { label: 'Open the command palette', keys: ['Mod', 'K'] },
   { label: 'Show or hide the sidebar', keys: ['Mod', 'B'] },
+  { label: 'Search the list on this page', keys: ['/'] },
   { label: 'Show keyboard shortcuts', keys: ['?'] },
 ]
 
@@ -20,7 +21,7 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
       <DialogPopup className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
-          <DialogDescription>Shortcuts that work anywhere in pow/dock.</DialogDescription>
+          <DialogDescription>Keys that save a few clicks.</DialogDescription>
         </DialogHeader>
         <DialogPanel>
           <div className="flex flex-col divide-y rounded-xl border">

@@ -251,7 +251,7 @@ export async function projectRunResponse(
 
 /**
  * The logs of every service of a project, followed, as NDJSON records with the service name split
- * off. Heartbeats keep the connection open. The process is killed when the browser goes away.
+ * off. Heartbeats keep the log socket open. The process is killed when the socket closes (`signal`).
  */
 export async function projectLogsResponse(name: string, tail: number, signal: AbortSignal): Promise<Response> {
   if (!(await composeAvailable())) return textResponse(503, COMPOSE_MISSING)

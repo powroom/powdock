@@ -40,6 +40,7 @@ pow/dock is built for **local use**:
 
 - **Listen on `127.0.0.1`** (the default). If other machines must reach pow/dock, put it behind a reverse proxy with HTTPS, and set `POWDOCK_SECURE_COOKIES=true`.
 - Behind a proxy, also set `POWDOCK_TRUST_PROXY=true`, so login limits use the real client IP. Do not turn this on if pow/dock can be reached without the proxy, because `X-Forwarded-For` can be faked.
+- **WebSockets**: the terminal and the live logs use WebSockets, so the reverse proxy must pass WebSocket upgrades through.
 - **Allowed hosts**: pow/dock refuses requests with an unknown `Host` header. This blocks DNS rebinding attacks. Add other host names with `POWDOCK_ALLOWED_HOSTS`.
 - **Cross-site requests** are refused by the server functions, which only accept calls from the same site.
 - **Docker socket**: pow/dock lists and manages the containers on this machine through the Docker Engine socket. Set the path with `POWDOCK_DOCKER_SOCKET`. Anyone who can use that socket has root access to the host, so only give it to a pow/dock you trust. pow/dock refuses to stop, restart, pause, kill or remove the container it runs in.
@@ -49,7 +50,7 @@ pow/dock is built for **local use**:
 The Terminal tab of a container opens a shell in that container, in the browser (xterm.js over a WebSocket).
 
 - **Default user**: the shell runs as the container's default user, the same user `docker exec` would use without `--user`.
-- **Shell**: `auto` starts `bash` when the container has it, and `sh` otherwise. You can also pick `bash`, `sh`, `ash` or `zsh`. A shell the container does not have ends with an error message.
+- **Shell**: the Shell menu lists only the shells the container has, looked up when the tab opens (bash, zsh, fish, and sh). bash is picked first when it is there. A container with no shell at all (for example a distroless image) shows a message instead of the terminal.
 - **Running containers only**: the terminal opens for a running container. A stopped one shows a Start button.
 - **Limit**: at most 20 terminals are open at once, across all browsers. More are refused with a message.
 - **Sign-in and origin**: the WebSocket needs the same session as the rest of pow/dock, and the request must come from pow/dock's own page (the `Origin` header must match the `Host`).

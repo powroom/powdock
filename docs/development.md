@@ -11,7 +11,7 @@ bun install
 bun run dev
 ```
 
-The app starts on port 3434: open http://127.0.0.1:3434/. The first start asks you to create an admin account.
+The app starts on port 3434: open http://127.0.0.1:3434/. The first start asks you to create an admin account. The terminal and the live logs use WebSockets that only the built server handles, so they do not work with `bun run dev`; use `bun run build` and `bun run start` to try them.
 
 ## Checks
 

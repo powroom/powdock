@@ -14,7 +14,6 @@ import { readLogPrefs, writeLogPrefs, type LogPrefs } from './log-prefs'
 import { LogList } from './log-list'
 import { useLogStream } from './use-log-stream'
 
-
 /**
  * A button that floats over the log lines. It needs an opaque background: in dark mode the secondary and
  * outline backgrounds are see-through, and the lines would show through the button.

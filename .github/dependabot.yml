@@ -1,0 +1,23 @@
+# Weekly pull requests for dependency updates. Each one runs CI before it can be merged.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
+    ignore:
+      # babel-plugin-react-compiler needs Babel 7; Babel 8 makes the compiler skip valid code
+      - dependency-name: '@babel/core'
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
