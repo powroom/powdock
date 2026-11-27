@@ -12,9 +12,9 @@ import {
   npmCommand,
   parseArgs,
   parsePortFlag,
+  platformMessage,
   privateBunCandidates,
   resolveDataDir,
-  runtimeDirFor,
   serveSettings,
   serverUrl,
   updateCheckOn,
@@ -35,6 +35,19 @@ function fakeProbe(files: Record<string, string | null>): FileProbe {
     versionOf: (bin) => files[bin] ?? null,
   }
 }
+
+describe('platform', () => {
+  test('Windows gets guidance that points to WSL 2 and the install docs', () => {
+    const text = platformMessage('win32')
+    expect(text).toContain('WSL 2')
+    expect(text).toContain('docs/install.md#windows')
+  })
+
+  test('Linux and macOS get no message', () => {
+    expect(platformMessage('linux')).toBeNull()
+    expect(platformMessage('darwin')).toBeNull()
+  })
+})
 
 describe('parseArgs', () => {
   test('no command starts the server with default options', () => {
@@ -121,39 +134,28 @@ describe('versions', () => {
 
 describe('data folder and settings', () => {
   test('defaults to ~/.powdock', () => {
-    expect(resolveDataDir({ flag: undefined, env: {}, homeDir: HOME, platform: 'linux' })).toBe('/home/tester/.powdock')
+    expect(resolveDataDir({ flag: undefined, env: {}, homeDir: HOME })).toBe('/home/tester/.powdock')
   })
 
   test('POWDOCK_DATA_DIR is used when no flag is given, and an empty value counts as unset', () => {
-    expect(
-      resolveDataDir({ flag: undefined, env: { POWDOCK_DATA_DIR: '/data' }, homeDir: HOME, platform: 'linux' }),
-    ).toBe('/data')
-    expect(resolveDataDir({ flag: undefined, env: { POWDOCK_DATA_DIR: '' }, homeDir: HOME, platform: 'linux' })).toBe(
+    expect(resolveDataDir({ flag: undefined, env: { POWDOCK_DATA_DIR: '/data' }, homeDir: HOME })).toBe('/data')
+    expect(resolveDataDir({ flag: undefined, env: { POWDOCK_DATA_DIR: '' }, homeDir: HOME })).toBe(
       '/home/tester/.powdock',
     )
   })
 
   test('the flag wins over the environment variable', () => {
-    expect(
-      resolveDataDir({ flag: '/flag', env: { POWDOCK_DATA_DIR: '/data' }, homeDir: HOME, platform: 'linux' }),
-    ).toBe('/flag')
+    expect(resolveDataDir({ flag: '/flag', env: { POWDOCK_DATA_DIR: '/data' }, homeDir: HOME })).toBe('/flag')
   })
 
   test('a leading ~ means the home folder, and relative paths become absolute', () => {
-    expect(resolveDataDir({ flag: '~/db', env: {}, homeDir: HOME, platform: 'linux' })).toBe('/home/tester/db')
-    expect(resolveDataDir({ flag: 'rel', env: {}, homeDir: HOME, platform: 'linux' })).toBe(path.posix.resolve('rel'))
-  })
-
-  test('Windows paths use backslashes', () => {
-    expect(resolveDataDir({ flag: undefined, env: {}, homeDir: 'C:\\Users\\Ana', platform: 'win32' })).toBe(
-      'C:\\Users\\Ana\\.powdock',
-    )
-    expect(runtimeDirFor('C:\\Users\\Ana', 'win32')).toBe('C:\\Users\\Ana\\.powdock\\runtime')
+    expect(resolveDataDir({ flag: '~/db', env: {}, homeDir: HOME })).toBe('/home/tester/db')
+    expect(resolveDataDir({ flag: 'rel', env: {}, homeDir: HOME })).toBe(path.resolve('rel'))
   })
 
   test('flags win over environment variables, which win over defaults', () => {
     const env = { PORT: '4000', HOST: '0.0.0.0', POWDOCK_DATA_DIR: '/env-data' }
-    expect(serveSettings({ options: NO_OPTIONS, env, homeDir: HOME, platform: 'linux' })).toEqual({
+    expect(serveSettings({ options: NO_OPTIONS, env, homeDir: HOME })).toEqual({
       port: '4000',
       host: '0.0.0.0',
       dataDir: '/env-data',
@@ -165,10 +167,9 @@ describe('data folder and settings', () => {
         options: { ...NO_OPTIONS, port: 3399, host: '127.0.0.1', dataDir: '/flag-data' },
         env,
         homeDir: HOME,
-        platform: 'linux',
       }),
     ).toEqual({ port: '3399', host: '127.0.0.1', dataDir: '/flag-data', open: true, yes: false })
-    expect(serveSettings({ options: NO_OPTIONS, env: {}, homeDir: HOME, platform: 'linux' })).toMatchObject({
+    expect(serveSettings({ options: NO_OPTIONS, env: {}, homeDir: HOME })).toMatchObject({
       port: '3434',
       host: '127.0.0.1',
       dataDir: '/home/tester/.powdock',
@@ -246,20 +247,6 @@ describe('finding Bun', () => {
     ).toEqual({ bin: runtimeBin, version: '1.4.4', source: 'private', old: [] })
   })
 
-  test('finds bun.exe on a Windows PATH', () => {
-    const probe = fakeProbe({ 'C:\\bun\\bun.exe': '1.4.4' })
-    const result = findBun({
-      env: { Path: 'C:\\tools;C:\\bun' },
-      platform: 'win32',
-      arch: 'x64',
-      homeDir: 'C:\\Users\\Ana',
-      execPath: 'C:\\Program Files\\nodejs\\node.exe',
-      runningVersion: null,
-      probe,
-    })
-    expect(result.bin).toBe('C:\\bun\\bun.exe')
-  })
-
   test('reports copies that do not run, and returns no Bun when there is none', () => {
     expect(
       findBun({
@@ -291,10 +278,6 @@ describe('finding Bun', () => {
       '/r/node_modules/.bin/bun',
       '/r/node_modules/@oven/bun-linux-x64/bin/bun',
     ])
-    expect(privateBunCandidates({ runtimeDir: 'C:\\r', platform: 'win32', arch: 'arm64' })).toEqual([
-      'C:\\r\\node_modules\\bun\\bin\\bun.exe',
-      'C:\\r\\node_modules\\@oven\\bun-windows-aarch64\\bin\\bun.exe',
-    ])
     expect(privateBunCandidates({ runtimeDir: '/r', platform: 'darwin', arch: 'arm64' })).toContain(
       '/r/node_modules/@oven/bun-darwin-aarch64/bin/bun',
     )
@@ -302,9 +285,10 @@ describe('finding Bun', () => {
 
   test('findAllOnPath keeps PATH order and skips empty entries', () => {
     const files = new Set(['/a/bun', '/c/bun'])
-    expect(
-      findAllOnPath('bun', { pathValue: '/a::/b:/c', platform: 'linux', isFile: (file) => files.has(file) }),
-    ).toEqual(['/a/bun', '/c/bun'])
+    expect(findAllOnPath('bun', { pathValue: '/a::/b:/c', isFile: (file) => files.has(file) })).toEqual([
+      '/a/bun',
+      '/c/bun',
+    ])
   })
 })
 
@@ -313,24 +297,17 @@ describe('npm command for installing Bun', () => {
     const cli = '/opt/node/lib/node_modules/npm/bin/npm-cli.js'
     expect(
       npmCommand({
-        platform: 'linux',
         execPath: '/opt/node/bin/node',
         isNode: true,
         isFile: (file) => file === cli,
       }),
-    ).toEqual({ command: '/opt/node/bin/node', args: [cli], shell: false })
+    ).toEqual({ command: '/opt/node/bin/node', args: [cli] })
   })
 
   test('under Bun, or without a bundled npm, uses npm from PATH', () => {
-    expect(npmCommand({ platform: 'linux', execPath: '/x/bun', isNode: false, isFile: () => false })).toEqual({
+    expect(npmCommand({ execPath: '/x/bun', isNode: false, isFile: () => false })).toEqual({
       command: 'npm',
       args: [],
-      shell: false,
-    })
-    expect(npmCommand({ platform: 'win32', execPath: 'C:\\x\\bun.exe', isNode: false, isFile: () => false })).toEqual({
-      command: 'npm.cmd',
-      args: [],
-      shell: true,
     })
   })
 })

@@ -29,6 +29,11 @@ import { logSocketHandlers, logSocketTarget, upgradeLogs, type LogSocketData } f
 import { terminalContainerId, terminalWebSocket, upgradeTerminal, type TerminalData } from '#/server/terminal.server'
 import { scheduleUpdateChecks } from '#/server/updates.server'
 
+if (process.platform === 'win32') {
+  console.error('[powdock] pow/dock does not run directly on Windows. Run it inside WSL 2: see docs/install.md#windows')
+  process.exit(1)
+}
+
 const port = parsePort(process.env.PORT)
 if (port === null) {
   console.error(`[powdock] PORT must be a whole number from 1 to 65535, not "${process.env.PORT}". Fix it or unset it.`)

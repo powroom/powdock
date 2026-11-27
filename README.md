@@ -14,6 +14,8 @@ npx powdock
 
 pow/dock opens at http://127.0.0.1:3434. It runs on Bun. If Bun is missing, `powdock` asks before it installs Bun, and that copy goes only into `~/.powdock/runtime`. Flags, data folders, and updates are in [Install and update](docs/install.md).
 
+On Windows, run it inside WSL 2. See [Windows](docs/install.md#windows).
+
 **With Docker** (needs [Docker](https://docs.docker.com/get-docker/)):
 
 ```bash

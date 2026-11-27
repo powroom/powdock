@@ -51,6 +51,14 @@ docker compose down          # stop (the data volume stays)
 
 The file needs `DOCKER_GID`, the group of the Docker socket, so pow/dock can use the socket. The `.env` line saves it next to `compose.yml`, and every `docker compose` command reads it from there. The file also has a commented example for the admin password.
 
+## Windows
+
+- pow/dock does not run directly on Windows. It talks to Docker through a Unix socket, and Windows has none.
+- Run it inside a WSL 2 distribution that can use Docker. Either install Docker Engine in that distribution, or use Docker Desktop with the WSL 2 engine and WSL integration turned on for that distribution.
+- Docker Desktop with Docker VMM has no Docker socket in WSL, so pow/dock does not work with it.
+- In a terminal in that distribution, run `npx powdock` (see [Run with npx](#run-with-npx)) or the Docker commands above.
+- Open http://localhost:3434 in your Windows browser. WSL forwards localhost to Windows, so the address works there too.
+
 ## Pin a version
 
 Use a release tag instead of `latest`, for example `ghcr.io/powroom/powdock:0.1.0`. The release tags are made from the version numbers of the releases.

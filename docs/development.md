@@ -3,6 +3,7 @@
 ## Requirements
 
 - [Bun](https://bun.sh) 1.4.4 or newer. Bun is the runtime, the package manager and the test runner.
+- Development runs on Linux or macOS. On Windows, run it inside WSL 2.
 
 ## Run it from source
 

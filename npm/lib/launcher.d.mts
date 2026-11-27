@@ -14,11 +14,7 @@ export interface ServeOptions {
 }
 
 export type ParsedArgs =
-  | { mode: 'serve'; options: ServeOptions }
-  | { mode: 'cli'; args: string[] }
-  | { mode: 'help' }
-  | { mode: 'version' }
-  | { mode: 'error'; message: string }
+  { mode: 'serve'; options: ServeOptions } | { mode: 'help' } | { mode: 'version' } | { mode: 'error'; message: string }
 
 export interface BunCopy {
   bin: string
@@ -40,6 +36,7 @@ export interface ServeSettings {
   yes: boolean
 }
 
+export function platformMessage(platform: string): string | null
 export function compareVersions(a: string | null | undefined, b: string | null | undefined): -1 | 0 | 1 | null
 export function isSupportedBun(version: string | null | undefined): boolean
 export function parsePortFlag(value: string | null | undefined): number | null
@@ -48,14 +45,12 @@ export function resolveDataDir(input: {
   flag?: string
   env: Record<string, string | undefined>
   homeDir: string
-  platform: string
 }): string
-export function runtimeDirFor(homeDir: string, platform: string): string
+export function runtimeDirFor(homeDir: string): string
 export function serveSettings(input: {
   options: ServeOptions
   env: Record<string, string | undefined>
   homeDir: string
-  platform: string
 }): ServeSettings
 export function childEnv(
   baseEnv: Record<string, string | undefined>,
@@ -70,7 +65,7 @@ export function latestRegistryVersion(input: {
 export function serverUrl(host: string, port: string | number): string
 export function findAllOnPath(
   command: string,
-  input: { pathValue: string | undefined; platform: string; isFile: (file: string) => boolean },
+  input: { pathValue: string | undefined; isFile: (file: string) => boolean },
 ): string[]
 export function privateBunCandidates(input: { runtimeDir: string; platform: string; arch: string }): string[]
 export function findBun(input: {
@@ -82,15 +77,9 @@ export function findBun(input: {
   runningVersion: string | null
   probe: FileProbe
 }): BunLookup
-export function npmCommand(input: {
-  platform: string
-  execPath: string
-  isNode: boolean
-  isFile: (file: string) => boolean
-}): {
+export function npmCommand(input: { execPath: string; isNode: boolean; isFile: (file: string) => boolean }): {
   command: string
   args: string[]
-  shell: boolean
 }
 export function helpText(version: string): string
 export function bunNotice(input: { old: BunCopy[]; runtimeDir: string }): string

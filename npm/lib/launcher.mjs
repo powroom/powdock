@@ -22,7 +22,6 @@ const SERVER_POLL_MS = 300
 const BUN_OS = new Map([
   ['linux', 'linux'],
   ['darwin', 'darwin'],
-  ['win32', 'windows'],
 ])
 const BUN_CPU = new Map([
   ['x64', 'x64'],
@@ -32,16 +31,22 @@ const SERVE_VALUE_FLAGS = new Set(['--port', '--host', '--data-dir'])
 const REGISTRY_LATEST_URL = 'https://registry.npmjs.org/powdock/latest'
 const REGISTRY_TIMEOUT_MS = 3000
 
+// ---- platform ---------------------------------------------------------------------------------
+
+const WINDOWS_GUIDANCE = [
+  'pow/dock does not run directly on Windows. It talks to Docker through a Unix socket, and Windows has none.',
+  'Run it inside WSL 2 instead, in a distribution that can use Docker:',
+  '  - Docker Engine installed in the WSL distribution, or',
+  '  - Docker Desktop with the WSL 2 engine and WSL integration turned on for that distribution.',
+  'Then run npx powdock in that distribution. See https://github.com/powroom/powdock/blob/main/docs/install.md#windows',
+].join('\n')
+
+/** The message to print and stop on for this platform, or null when pow/dock can run there. */
+export function platformMessage(platform) {
+  return platform === 'win32' ? WINDOWS_GUIDANCE : null
+}
+
 // ---- small helpers ----------------------------------------------------------------------------
-
-/** Path functions for the platform the paths belong to, so Windows paths can be tested anywhere. */
-function pathsFor(platform) {
-  return platform === 'win32' ? path.win32 : path.posix
-}
-
-function exeName(name, platform) {
-  return platform === 'win32' ? `${name}.exe` : name
-}
 
 /** The value when it has text in it, otherwise undefined. An empty environment variable counts as unset. */
 function nonEmpty(value) {
@@ -49,7 +54,7 @@ function nonEmpty(value) {
 }
 
 function pathEnvOf(env) {
-  return env.PATH ?? env.Path ?? ''
+  return env.PATH ?? ''
 }
 
 function usageError(message) {
@@ -146,27 +151,26 @@ function parseServeArgs(argv) {
 // ---- folders ----------------------------------------------------------------------------------
 
 /** The data folder: --data-dir, else POWDOCK_DATA_DIR, else ~/.powdock. Always an absolute path. */
-export function resolveDataDir({ flag, env, homeDir, platform }) {
-  const p = pathsFor(platform)
+export function resolveDataDir({ flag, env, homeDir }) {
   const chosen = nonEmpty(flag) ?? nonEmpty(env.POWDOCK_DATA_DIR)
-  if (chosen === undefined) return p.join(homeDir, '.powdock')
+  if (chosen === undefined) return path.join(homeDir, '.powdock')
   let expanded = chosen
   if (chosen === '~') expanded = homeDir
-  else if (/^~[\\/]/.test(chosen)) expanded = p.join(homeDir, chosen.slice(2))
-  return p.resolve(expanded)
+  else if (chosen.startsWith('~/')) expanded = path.join(homeDir, chosen.slice(2))
+  return path.resolve(expanded)
 }
 
 /** Where a private copy of Bun is installed. It lives under ~/.powdock even when the data folder moves. */
-export function runtimeDirFor(homeDir, platform) {
-  return pathsFor(platform).join(homeDir, '.powdock', 'runtime')
+export function runtimeDirFor(homeDir) {
+  return path.join(homeDir, '.powdock', 'runtime')
 }
 
 /** Settings for starting the server. Flags win over environment variables, which win over defaults. */
-export function serveSettings({ options, env, homeDir, platform }) {
+export function serveSettings({ options, env, homeDir }) {
   return {
     port: options.port !== undefined ? String(options.port) : (nonEmpty(env.PORT) ?? String(DEFAULT_PORT)),
     host: options.host ?? nonEmpty(env.HOST) ?? DEFAULT_HOST,
-    dataDir: resolveDataDir({ flag: options.dataDir, env, homeDir, platform }),
+    dataDir: resolveDataDir({ flag: options.dataDir, env, homeDir }),
     open: options.open,
     yes: options.yes,
   }
@@ -227,15 +231,12 @@ export function serverUrl(host, port) {
 // ---- finding Bun ------------------------------------------------------------------------------
 
 /** Every file called `command` in the PATH folders, in PATH order. `isFile` is injected for tests. */
-export function findAllOnPath(command, { pathValue, platform, isFile }) {
-  const p = pathsFor(platform)
-  const file = exeName(command, platform)
-  const separator = platform === 'win32' ? ';' : ':'
+export function findAllOnPath(command, { pathValue, isFile }) {
   const found = []
-  for (const entry of String(pathValue ?? '').split(separator)) {
-    const dir = entry.trim().replace(/^"(.*)"$/, '$1')
+  for (const entry of String(pathValue ?? '').split(':')) {
+    const dir = entry.trim()
     if (dir === '') continue
-    const candidate = p.join(dir, file)
+    const candidate = path.join(dir, command)
     if (!found.includes(candidate) && isFile(candidate)) found.push(candidate)
   }
   return found
@@ -247,14 +248,11 @@ export function findAllOnPath(command, { pathValue, platform, isFile }) {
  * the platform package @oven/bun-<os>-<cpu>.
  */
 export function privateBunCandidates({ runtimeDir, platform, arch }) {
-  const p = pathsFor(platform)
-  const modules = p.join(runtimeDir, 'node_modules')
-  const exe = exeName('bun', platform)
-  const candidates = [p.join(modules, 'bun', 'bin', exe)]
-  if (platform !== 'win32') candidates.push(p.join(modules, '.bin', 'bun'))
+  const modules = path.join(runtimeDir, 'node_modules')
+  const candidates = [path.join(modules, 'bun', 'bin', 'bun'), path.join(modules, '.bin', 'bun')]
   const os = BUN_OS.get(platform)
   const cpu = BUN_CPU.get(arch)
-  if (os && cpu) candidates.push(p.join(modules, '@oven', `bun-${os}-${cpu}`, 'bin', exe))
+  if (os && cpu) candidates.push(path.join(modules, '@oven', `bun-${os}-${cpu}`, 'bin', 'bun'))
   return candidates
 }
 
@@ -268,9 +266,9 @@ export function privateBunCandidates({ runtimeDir, platform, arch }) {
 export function findBun({ env, platform, arch, homeDir, execPath, runningVersion, probe }) {
   const candidates = []
   if (runningVersion) candidates.push({ bin: execPath, source: 'runtime', version: runningVersion })
-  const onPath = findAllOnPath('bun', { pathValue: pathEnvOf(env), platform, isFile: probe.isFile })
+  const onPath = findAllOnPath('bun', { pathValue: pathEnvOf(env), isFile: probe.isFile })
   for (const bin of onPath) candidates.push({ bin, source: 'path' })
-  for (const bin of privateBunCandidates({ runtimeDir: runtimeDirFor(homeDir, platform), platform, arch })) {
+  for (const bin of privateBunCandidates({ runtimeDir: runtimeDirFor(homeDir), platform, arch })) {
     if (probe.isFile(bin)) candidates.push({ bin, source: 'private' })
   }
   const old = []
@@ -288,19 +286,17 @@ export function findBun({ env, platform, arch, homeDir, execPath, runningVersion
 }
 
 /** The npm program that installs Bun. Under Node, the npm that came with it; otherwise npm on PATH. */
-export function npmCommand({ platform, execPath, isNode, isFile }) {
+export function npmCommand({ execPath, isNode, isFile }) {
   if (isNode) {
-    const p = pathsFor(platform)
-    const dir = p.dirname(execPath)
+    const dir = path.dirname(execPath)
     const candidates = [
-      p.join(dir, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-      p.join(dir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+      path.join(dir, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+      path.join(dir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
     ]
     const cli = candidates.find((file) => isFile(file))
-    if (cli) return { command: execPath, args: [cli], shell: false }
+    if (cli) return { command: execPath, args: [cli] }
   }
-  if (platform === 'win32') return { command: 'npm.cmd', args: [], shell: true }
-  return { command: 'npm', args: [], shell: false }
+  return { command: 'npm', args: [] }
 }
 
 // ---- text -------------------------------------------------------------------------------------
@@ -349,7 +345,7 @@ const realProbe = {
     }
   },
   versionOf(bin) {
-    const result = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 10000, windowsHide: true })
+    const result = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 10000 })
     if (result.error || result.status !== 0) return null
     const version = String(result.stdout).trim()
     return parseVersion(version) ? version : null
@@ -404,22 +400,10 @@ function waitForExit(child) {
 
 /** Opens the browser. A missing opener is not an error: the URL is printed anyway. */
 function openBrowser(url, platform) {
-  let command = 'xdg-open'
-  let args = [url]
-  let extra = {}
-  if (platform === 'darwin') command = 'open'
-  if (platform === 'win32') {
-    command = 'cmd'
-    args = ['/c', 'start', '""', url]
-    extra = { windowsVerbatimArguments: true }
-  }
-  const child = spawn(command, args, { stdio: 'ignore', detached: true, windowsHide: true, ...extra })
+  const command = platform === 'darwin' ? 'open' : 'xdg-open'
+  const child = spawn(command, [url], { stdio: 'ignore', detached: true })
   child.on('error', () => {})
   child.unref()
-}
-
-function quoteForShell(arg) {
-  return /[\s"]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg
 }
 
 /** Asks one question on the terminal. An empty string when the input ends or Ctrl+C is pressed. */
@@ -436,15 +420,13 @@ function ask(question) {
 }
 
 /** Installs Bun 1.4.4 into the runtime folder only. Resolves with npm's exit code. */
-function installBun(runtimeDir, isNode, platform, isFile) {
+function installBun(runtimeDir, isNode, isFile) {
   mkdirSync(runtimeDir, { recursive: true })
-  const npm = npmCommand({ platform, execPath: process.execPath, isNode, isFile })
+  const npm = npmCommand({ execPath: process.execPath, isNode, isFile })
   const args = [...npm.args, 'install', '--prefix', runtimeDir, '--no-save', '--no-audit', '--no-fund']
   args.push(`bun@${MIN_BUN_VERSION}`)
   console.error(`Installing Bun ${MIN_BUN_VERSION} into ${runtimeDir} ...`)
-  const child = npm.shell
-    ? spawn([npm.command, ...args].map(quoteForShell).join(' '), { stdio: 'inherit', shell: true, windowsHide: true })
-    : spawn(npm.command, args, { stdio: 'inherit', windowsHide: true })
+  const child = spawn(npm.command, args, { stdio: 'inherit' })
   return waitForExit(child)
 }
 
@@ -466,7 +448,7 @@ async function ensureBun({ env, homeDir, platform, arch, yes, isNode }) {
   const found = lookup()
   if (found.bin !== null) return found.bin
 
-  const runtimeDir = runtimeDirFor(homeDir, platform)
+  const runtimeDir = runtimeDirFor(homeDir)
   console.error(bunNotice({ old: found.old, runtimeDir }))
   if (!yes) {
     if (!process.stdin.isTTY) {
@@ -482,7 +464,7 @@ async function ensureBun({ env, homeDir, platform, arch, yes, isNode }) {
     }
   }
 
-  const code = await installBun(runtimeDir, isNode, platform, realProbe.isFile)
+  const code = await installBun(runtimeDir, isNode, realProbe.isFile)
   if (code !== 0) {
     console.error(`powdock: installing Bun failed (npm exit code ${code}). Install Bun from https://bun.sh instead.`)
     return null
@@ -515,7 +497,7 @@ async function serve(bun, settings, platform) {
 
   // Started now and read after the server is up, so the check never delays the start.
   const latestCheck = latestRegistryVersion({ env: process.env })
-  const child = spawn(bun, [startJs], { stdio: 'inherit', env: childEnv(process.env, settings), windowsHide: true })
+  const child = spawn(bun, [startJs], { stdio: 'inherit', env: childEnv(process.env, settings) })
   let gone = false
   const exited = waitForExit(child).then((code) => {
     gone = true
@@ -550,6 +532,11 @@ async function serve(bun, settings, platform) {
  * stops. bin/powdock.mjs passes the code to process.exit.
  */
 export async function main(argv) {
+  const blocked = platformMessage(process.platform)
+  if (blocked !== null) {
+    console.error(blocked)
+    return 1
+  }
   const parsed = parseArgs(argv)
   if (parsed.mode === 'error') {
     console.error(`powdock: ${parsed.message}`)
@@ -576,6 +563,6 @@ export async function main(argv) {
   })
   if (bun === null) return 1
 
-  const settings = serveSettings({ options: parsed.options, env: process.env, homeDir: homeDirectory, platform })
+  const settings = serveSettings({ options: parsed.options, env: process.env, homeDir: homeDirectory })
   return serve(bun, settings, platform)
 }
